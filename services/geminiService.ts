@@ -49,12 +49,55 @@ export const fetchTrends = async (customPrompt?: string): Promise<Trend[]> => {
   }
 };
 
-export const generateMerchDesign = async (trend: Trend, stylePrefix?: string): Promise<GeneratedDesign | null> => {
+export const generateMerchDesign = async (trend: Trend, productType: string, stylePrefix?: string): Promise<GeneratedDesign | null> => {
   const prefix = stylePrefix || DESIGN_PROMPT_PREFIX;
   
   try {
-    // We add "ensure white background" explicitly to help the multiply blend mode
-    const prompt = `${prefix} ${trend.visualStyle}. Text elements should be minimal. Theme: ${trend.topic}. IMPORTANT: High contrast, white background.`;
+    // 1. Generate Product Details using Gemini 3 Flash
+    const detailsPrompt = `You are an avant-garde product designer. Based on the viral trend "${trend.topic}" (Context: ${trend.context}) and the product type "${productType}", generate a detailed product concept.
+    Return a JSON object with the following keys:
+    - coreConcept: The core philosophy and idea behind this product (产品核心理念).
+    - designAppearance: Detailed description of its physical appearance, materials, and aesthetics (设计与外观).
+    - coreInnovation: What makes this product functionally or visually innovative? (核心创新的点).
+    - usageScenarios: Where and how would a user use this product? (使用场景与细节).`;
+
+    let details: any = {
+      coreConcept: "A unique take on modern trends.",
+      designAppearance: "Sleek, avant-garde design.",
+      coreInnovation: "Fuses digital culture with physical form.",
+      usageScenarios: "Everyday use for the culturally aware."
+    };
+
+    try {
+      const detailsResponse = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: detailsPrompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              coreConcept: { type: Type.STRING },
+              designAppearance: { type: Type.STRING },
+              coreInnovation: { type: Type.STRING },
+              usageScenarios: { type: Type.STRING }
+            },
+            required: ["coreConcept", "designAppearance", "coreInnovation", "usageScenarios"]
+          }
+        }
+      });
+      const parsedDetails = JSON.parse(detailsResponse.text || "{}");
+      if (parsedDetails.coreConcept) {
+        details = parsedDetails;
+      }
+    } catch (e) {
+      console.error("Failed to generate product details, using fallback.", e);
+    }
+
+    // 2. Generate an actual photo of the product, not just a flat design.
+    const prompt = `${prefix} CRITICAL INSTRUCTION: DO NOT generate a flat graphic, logo, or watermark. You must generate a photorealistic studio photograph of a UNIQUE PHYSICAL ${productType}. The actual physical shape, materials, structure, and 3D form of the ${productType} must be creatively designed to embody the trend: "${trend.topic}". (Context: ${trend.context}). Visual style: ${trend.visualStyle}. 
+    Design Details: ${details.designAppearance}. 
+    This is an industrial/fashion design task, not a 2D graphic design task. The product must look like a real, tangible, high-end manufactured item with depth, texture, and creative physical features. Clean, minimalist studio lighting, highly detailed, photorealistic product photography.`;
     
     // Using gemini-2.5-flash-image for speed and efficiency
     // Added retry logic for 429 errors
@@ -67,6 +110,11 @@ export const generateMerchDesign = async (trend: Trend, stylePrefix?: string): P
           model: 'gemini-2.5-flash-image',
           contents: {
             parts: [{ text: prompt }]
+          },
+          config: {
+            imageConfig: {
+              aspectRatio: "3:4"
+            }
           }
         });
 
@@ -75,7 +123,8 @@ export const generateMerchDesign = async (trend: Trend, stylePrefix?: string): P
         if (response.candidates?.[0]?.content?.parts) {
           for (const part of response.candidates[0].content.parts) {
             if (part.inlineData && part.inlineData.data) {
-              imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+              const mimeType = part.inlineData.mimeType || 'image/png';
+              imageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
               break;
             }
           }
@@ -84,7 +133,8 @@ export const generateMerchDesign = async (trend: Trend, stylePrefix?: string): P
         if (imageUrl) {
           return {
             imageUrl,
-            promptUsed: prompt
+            promptUsed: prompt,
+            details
           };
         } else {
             console.warn("No image data found in response");

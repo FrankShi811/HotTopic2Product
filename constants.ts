@@ -21,4 +21,4 @@ Keep descriptions concise and evocative.
 Return JSON format.
 `;
 
-export const DESIGN_PROMPT_PREFIX = "Professional merchandise design, isolated on PURE WHITE background, vector art style, clean lines, high contrast, minimalist but striking. Suitable for printing on fabric. No photorealism. Theme: ";
+export const DESIGN_PROMPT_PREFIX = "Professional product photography, highly detailed, photorealistic, cinematic lighting, 8k resolution, clean background.";

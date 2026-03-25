@@ -25,9 +25,17 @@ export interface Trend {
   score: number;
 }
 
+export interface ProductDetails {
+  coreConcept: string;
+  designAppearance: string;
+  coreInnovation: string;
+  usageScenarios: string;
+}
+
 export interface GeneratedDesign {
   imageUrl: string; // Base64 or URL
   promptUsed: string;
+  details: ProductDetails;
 }
 
 export interface Product {
@@ -37,7 +45,9 @@ export interface Product {
   description: string;
   type: ProductType;
   designUrl: string; // The generated artwork
+  details?: ProductDetails;
   votes: number;
+  preOrders: number;
   status: ProductStatus;
   price: number;
   createdAt: number;
@@ -54,4 +64,5 @@ export interface AppSettings {
   trendPrompt: string;
   designStylePrompt: string;
   fundingThreshold: number;
+  productionThreshold: number;
 }
