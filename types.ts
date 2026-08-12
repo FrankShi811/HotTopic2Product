@@ -66,7 +66,7 @@ export interface HealthPayload {
   ok: boolean;
   mode: 'demo' | 'gemini';
   modelConfigured: boolean;
-  persistence: 'local-file';
+  persistence: 'local-file' | 'browser-demo';
 }
 
 export interface GenerationJob {
