@@ -1,68 +1,79 @@
-export enum ProductStatus {
-  DRAFT = 'DRAFT',
-  CROWDFUNDING = 'CROWDFUNDING',
-  FUNDED = 'FUNDED',
-  PRODUCTION = 'PRODUCTION'
-}
+export type SourceMode = 'demo' | 'manual';
+export type IdeaStage = 'review' | 'approved' | 'rejected' | 'validating' | 'ready';
 
-export enum ProductType {
-  TSHIRT = 'T-Shirt',
-  HOODIE = 'Hoodie',
-  CAP = 'Cap',
-  TOTE = 'Tote Bag',
-  MUG = 'Mug',
-  PHONE_CASE = 'Phone Case',
-  CUSHION = 'Cushion',
-  POSTER = 'Art Poster'
-}
-
-export interface Trend {
+export interface Signal {
   id: string;
-  topic: string;
-  platform: 'TikTok' | 'Instagram' | 'Facebook';
-  context: string;
-  visualStyle: string;
+  sourceMode: SourceMode;
+  sourceLabel: string;
+  sourceUrl: string | null;
+  platform: string;
+  title: string;
+  summary: string;
+  visualHint: string;
   score: number;
+  capturedAt: string;
 }
 
-export interface ProductDetails {
+export interface ProductConcept {
   coreConcept: string;
   designAppearance: string;
-  coreInnovation: string;
-  usageScenarios: string;
+  validationGoal: string;
+  manufacturingNotes: string;
 }
 
-export interface GeneratedDesign {
-  imageUrl: string; // Base64 or URL
-  promptUsed: string;
-  details: ProductDetails;
-}
-
-export interface Product {
+export interface Idea {
   id: string;
-  trendId: string;
+  signalId: string;
   title: string;
-  description: string;
-  type: ProductType;
-  designUrl: string; // The generated artwork
-  details?: ProductDetails;
-  votes: number;
-  preOrders: number;
-  status: ProductStatus;
-  price: number;
-  createdAt: number;
-  fundingProgress: number; // 0 to 100
+  summary: string;
+  productType: string;
+  stage: IdeaStage;
+  concept: ProductConcept;
+  imageUrl: string | null;
+  generationMode: 'demo' | 'gemini';
+  interestCount: number;
+  reviewNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface SystemState {
-  isScanning: boolean;
-  isGenerating: boolean;
-  logs: string[];
+export interface WorkspaceSummary {
+  signalCount: number;
+  ideaCount: number;
+  reviewCount: number;
+  approvedCount: number;
+  validationCount: number;
+  stages: Record<IdeaStage, number>;
 }
 
-export interface AppSettings {
-  trendPrompt: string;
-  designStylePrompt: string;
-  fundingThreshold: number;
-  productionThreshold: number;
+export interface AuditEvent {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  detail: string;
+  createdAt: string;
+}
+
+export interface DashboardPayload {
+  summary: WorkspaceSummary;
+  recentSignals: Signal[];
+  recentIdeas: Idea[];
+  recentEvents: AuditEvent[];
+}
+
+export interface HealthPayload {
+  ok: boolean;
+  mode: 'demo' | 'gemini';
+  modelConfigured: boolean;
+  persistence: 'local-file' | 'browser-demo';
+}
+
+export interface GenerationJob {
+  id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  error: string | null;
+  ideaId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
